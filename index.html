@@ -1,310 +1,160 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magic Cards: Base Defense Mobile</title>
-    <style>
-        /* --- TEXTURAS, CORES E ESTILOS GERAIS (CSS) --- */
-        :root {
-            --bg-dark: #0d0e12;
-            --panel-bg: #1a1c23;
-            --primary-neon: #9d4edd;
-            --secondary-neon: #3a86ff;
-            --enemy-neon: #ff0054;
-            --text-color: #e2e8f0;
-            --gold: #ffb703;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        /* --- TELA DE ENTRADA (MENU) --- */
-        #menu-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, #241442 0%, #0d0e12 100%);
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            transition: opacity 0.5s ease;
-        }
-
-        .game-title {
-            font-size: 3rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            color: #fff;
-            text-shadow: 0 0 10px var(--primary-neon), 0 0 30px var(--primary-neon);
-            margin-bottom: 50px;
-            text-align: center;
-        }
-
-        .btn-play {
-            padding: 15px 60px;
-            font-size: 1.8rem;
-            background: transparent;
-            color: #fff;
-            border: 2px solid var(--secondary-neon);
-            border-radius: 30px;
-            cursor: pointer;
-            box-shadow: 0 0 15px var(--secondary-neon);
-            font-weight: bold;
-        }
-
-        /* --- TELA DE JOGO --- */
-        #game-screen {
-            display: none; 
-            width: 100%;
-            height: 100%;
-            position: relative;
-            flex-direction: column;
-        }
-
-        /* HUD Superior */
-        #hud {
-            height: 50px;
-            background: var(--panel-bg);
-            border-bottom: 2px solid #2d313f;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding: 0 10px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            z-index: 10;
-        }
-
-        .hud-item span { color: var(--gold); }
-        .hud-hp span { color: var(--enemy-neon); }
-
-        /* Campo de Batalha (2D) */
-        #battlefield {
-            flex: 1;
-            background: linear-gradient(to bottom, #13151f 0%, #1c1e29 70%, #11131c 100%);
-            position: relative;
-            overflow: hidden;
-            border-bottom: 4px solid #2d313f;
-        }
-
-        .base {
-            position: absolute;
-            bottom: 20px;
-            width: 70px;
-            height: 120px;
-            border-radius: 8px;
-        }
-
-        #player-base {
-            left: 10px;
-            background: linear-gradient(45deg, #1e293b, var(--secondary-neon));
-            box-shadow: -5px 0 15px var(--secondary-neon);
-        }
-
-        #enemy-base {
-            right: 10px;
-            background: linear-gradient(45deg, var(--enemy-neon), #1e293b);
-            box-shadow: 5px 0 15px var(--enemy-neon);
-        }
-
-        /* Entidades / Sprites */
-        .entity {
-            position: absolute;
-            bottom: 20px;
-            width: 45px;
-            height: 65px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.75rem;
-            color: #fff;
-        }
-
-        #hero {
-            background: radial-gradient(circle, #fff 0%, var(--secondary-neon) 100%);
-            box-shadow: 0 0 15px var(--secondary-neon);
-            border: 2px solid #fff;
-            z-index: 5;
-            color: #000;
-        }
-
-        .ally {
-            background: linear-gradient(to top, #48cae4, #0077b6);
-            box-shadow: 0 0 8px var(--secondary-neon);
-            border: 1px solid #fff;
-        }
-
-        .enemy {
-            background: linear-gradient(to top, var(--enemy-neon), #9b003a);
-            box-shadow: 0 0 10px var(--enemy-neon);
-        }
-
-        /* Efeitos visuais de ação */
-        .attacking { transform: scale(1.2) skewX(-15deg); filter: brightness(1.4); }
-        .defending { border: 3px solid #00f5d4 !important; box-shadow: 0 0 25px #00f5d4 !important; }
-
-        /* --- PAINEL INFERIOR OTIMIZADO PARA TABLET --- */
-        #bottom-panel {
-            height: 240px;
-            background: var(--panel-bg);
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        /* Zona das Cartas */
-        .cards-section {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .card {
-            width: 28%;
-            max-width: 110px;
-            height: 100px;
-            background: linear-gradient(135deg, #2c3040 0%, #181a24 100%);
-            border: 2px solid #4a526d;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 4px;
-        }
-
-        .card-title { font-size: 0.8rem; font-weight: bold; text-align: center; }
-        .card-cost { background: #3d435a; padding: 1px 6px; border-radius: 8px; font-size: 0.7rem; color: #00f5d4; font-weight: bold; }
-
-        /* Controles de Toque Virtuais (Estilo Console Mobile) */
-        .controls-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex: 1;
-        }
-
-        .dpad, .action-pad {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-virtual {
-            background: #2d313f;
-            color: white;
-            border: 2px solid #4a526d;
-            border-radius: 12px;
-            padding: 12px 18px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .btn-virtual:active { background: #5a658c; }
-
-        .btn-danger { background: #e63946; }
-        .btn-danger:active { background: #ff5a6a; }
-
-        .btn-blue { background: #457b9d; }
-        .btn-blue:active { background: #6da4c7; }
-
-        /* Upgrades compactos */
-        .upgrade-row {
-            display: flex;
-            justify-content: space-around;
-            gap: 10px;
-            background: #11131c;
-            padding: 5px;
-            border-radius: 8px;
-        }
-        .btn-up {
-            background: transparent;
-            border: none;
-            color: var(--primary-neon);
-            font-weight: bold;
-            font-size: 0.8rem;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Magic Cards: Base Defense Epic</title>
+<style>
+body{margin:0;background:#0d0e12;color:#fff;font-family:Arial;height:100vh;display:flex;flex-direction:column}
+#menu,#gameover{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;justify-content:center;align-items:center}
+#game{display:none;flex:1;flex-direction:column}
+#hud{display:flex;justify-content:space-around;padding:10px;background:#1a1c23}
+#battle{flex:1;position:relative;background:#222;overflow:hidden}
+.base,.unit{position:absolute;bottom:20px}
+.base{width:60px;height:100px}
+#pbase{left:10px;background:#3a86ff}
+#ebase{right:10px;background:#ff0054}
+#hero{left:90px;width:40px;height:60px;background:#fff;color:#000;text-align:center;line-height:60px}
+.enemy{width:40px;height:60px;background:#ff0054;text-align:center;line-height:60px}
+.ally{width:40px;height:60px;background:#3a86ff;text-align:center;line-height:60px}
+#controls{padding:10px;background:#1a1c23;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+button{padding:12px;border:none;border-radius:8px}
+</style>
 </head>
 <body>
 
-    <!-- INTERFACE 1: TELA DE ENTRADA -->
-    <div id="menu-screen">
-        <h1 class="game-title">Magic Cards<br><span style="font-size: 1.5rem; color: var(--secondary-neon);">Base Defense</span></h1>
-        <button class="btn-play" onclick="startGame()">PLAY</button>
-    </div>
+<div id="menu">
+<h1>Magic Cards: Base Defense</h1>
+<button onclick="startGame()">JOGAR</button>
+</div>
 
-    <!-- INTERFACE 2: TELA DO JOGO -->
-    <div id="game-screen">
-        <!-- HUD Superior -->
-        <div id="hud">
-            <div class="hud-item" id="hud-stage">Fase: <span>1</span></div>
-            <div class="hud-item" id="hud-gold">Ouro: <span>0</span></div>
-            <div class="hud-item" id="hud-mana">Mana: <span>10/10</span></div>
-            <div class="hud-item hud-hp" id="hud-base-hp">Base: <span>100</span></div>
-        </div>
+<div id="gameover" style="display:none">
+<h1>Game Over</h1>
+<p id="final"></p>
+<button onclick="location.reload()">Reiniciar</button>
+</div>
 
-        <!-- Campo de Luta 2D -->
-        <div id="battlefield">
-            <div id="player-base" class="base"></div>
-            <div id="enemy-base" class="base"></div>
-            👑 Herói</div>
-        </div>
+<div id="game">
+<div id="hud">
+<div>Fase: <span id="stage">1</span></div>
+<div>Ouro: <span id="gold">0</span></div>
+<div>Mana: <span id="mana">10</span></div>
+<div>Base: <span id="hp">100</span></div>
+</div>
 
-        <!-- Painel de Controle de Toque Inferior -->
-        <div id="bottom-panel">
-            <!-- Linha de Cartas (Clique Amigável para Dedos) -->
-            <div class="cards-section">
-                <div class="card" onclick="useCard('mage')">
-                    <div class="card-title">🧙‍♂️ Mago</div>
-                    <div class="card-cost">3 Mana</div>
-                </div>
-                <div class="card" onclick="useCard('knight')">
-                    <div class="card-title">🛡️ Cavaleiro</div>
-                    <div class="card-cost">4 Mana</div>
-                </div>
-                <div class="card" onclick="useCard('potion')">
-                    <div class="card-title">🧪 Cura</div>
-                    <div class="card-cost">2 Mana</div>
-                </div>
-            </div>
+<div id="battle">
+<div id="pbase" class="base"></div>
+<div id="ebase" class="base"></div>
+<div id="hero" class="unit">👑</div>
+</div>
 
-            <!-- Botões de Ação Direct Digital -->
-            <div class="controls-section">
-                <!-- Direcionais Esquerda / Direita -->
-                <div class="dpad">
-                    <button class="btn-virtual" onclick="moveHero(-25)">⬅ A</button>
-                    <button class="btn-virtual" onclick="moveHero(25)">D ➡</button>
-                </div>
+<div id="controls">
+<button onclick="move(-25)">⬅</button>
+<button onclick="move(25)">➡</button>
+<button onclick="attack()">⚔</button>
+<button onclick="summon()">🧙</button>
+</div>
+</div>
 
-                <!-- Ataque e Defesa -->
-                <div class="action-pad">
-                    <button class="btn-virtual btn-blue" onclick="heroDefend()">DEF (🛡️)</button>
-                    <button class="btn-virtual btn-danger" onclick="heroAttack()">ATK (⚔️)</button>
-                </div>
-            </div>
+<script>
+const S={stage:1,gold:0,mana:10,hp:100,hero:90,enemies:[],allies:[]};
 
-            <!-- Barra de Upgrades rápidos -->
+function ui(){
+stage.textContent=S.stage;
+gold.textContent=S.gold;
+mana.textContent=S.mana;
+hp.textContent=S.hp;
+}
+
+function startGame(){
+menu.style.display="none";
+game.style.display="flex";
+spawnLoop=setInterval(spawn,2000);
+gameLoop=requestAnimationFrame(loop);
+manaLoop=setInterval(()=>{if(S.mana<10){S.mana++;ui();}},1000);
+}
+
+function move(v){
+S.hero=Math.max(70,Math.min(window.innerWidth-120,S.hero+v));
+hero.style.left=S.hero+"px";
+}
+
+function attack(){
+S.enemies.forEach(e=>{
+if(e.x-S.hero<80 && e.x>S.hero)e.hp-=15;
+});
+}
+
+function summon(){
+if(S.mana<3)return;
+S.mana-=3;
+ui();
+const el=document.createElement("div");
+el.className="unit ally";
+el.textContent="🧙";
+battle.appendChild(el);
+S.allies.push({el,x:80,hp:50});
+}
+
+function spawn(){
+const el=document.createElement("div");
+el.className="unit enemy";
+el.textContent=S.stage%5===0?"🐉":"👹";
+battle.appendChild(el);
+S.enemies.push({el,x:battle.clientWidth-100,hp:30+S.stage*10});
+}
+
+function loop(){
+S.allies.forEach(a=>{
+a.x+=2;
+a.el.style.left=a.x+"px";
+S.enemies.forEach(e=>{
+if(Math.abs(e.x-a.x)<40)e.hp-=0.5;
+});
+});
+
+S.enemies=S.enemies.filter(e=>{
+e.x-=1+S.stage*0.1;
+e.el.style.left=e.x+"px";
+
+if(e.hp<=0){
+e.el.remove();
+S.gold+=10;
+ui();
+return false;
+}
+
+if(e.x<70){
+S.hp-=10;
+ui();
+e.el.remove();
+if(S.hp<=0)end();
+return false;
+}
+return true;
+});
+
+if(S.gold>=S.stage*50){
+S.stage++;
+ui();
+}
+
+gameLoop=requestAnimationFrame(loop);
+}
+
+function end(){
+cancelAnimationFrame(gameLoop);
+clearInterval(spawnLoop);
+clearInterval(manaLoop);
+localStorage.setItem("record",Math.max(+localStorage.getItem("record")||0,S.stage));
+game.style.display="none";
+gameover.style.display="flex";
+final.textContent="Você chegou à fase "+S.stage+
+" | Recorde: "+localStorage.getItem("record");
+}
+
+ui();
+</script>
+
+</body>
+</html>
