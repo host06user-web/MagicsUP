@@ -1,160 +1,235 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Magic Cards: Base Defense Epic</title>
-<style>
-body{margin:0;background:#0d0e12;color:#fff;font-family:Arial;height:100vh;display:flex;flex-direction:column}
-#menu,#gameover{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;justify-content:center;align-items:center}
-#game{display:none;flex:1;flex-direction:column}
-#hud{display:flex;justify-content:space-around;padding:10px;background:#1a1c23}
-#battle{flex:1;position:relative;background:#222;overflow:hidden}
-.base,.unit{position:absolute;bottom:20px}
-.base{width:60px;height:100px}
-#pbase{left:10px;background:#3a86ff}
-#ebase{right:10px;background:#ff0054}
-#hero{left:90px;width:40px;height:60px;background:#fff;color:#000;text-align:center;line-height:60px}
-.enemy{width:40px;height:60px;background:#ff0054;text-align:center;line-height:60px}
-.ally{width:40px;height:60px;background:#3a86ff;text-align:center;line-height:60px}
-#controls{padding:10px;background:#1a1c23;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-button{padding:12px;border:none;border-radius:8px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber Fight Retro</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { background: #111; color: #fff; font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        #gameContainer { position: relative; width: 100%; max-width: 800px; aspect-ratio: 16/9; background: #000; border: 4px solid #333; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
+        canvas { width: 100%; height: 100%; display: block; }
+        .hud { position: absolute; top: 10px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; font-weight: bold; font-size: 18px; text-shadow: 2px 2px #000; }
+        .health-bar-container { width: 40%; background: #555; height: 20px; border: 2px solid #fff; }
+        .health-bar { height: 100%; width: 100%; transition: width 0.1s; }
+        #p1Health { background: #ff3333; }
+        #p2Health { background: #3333ff; }
+        #controls { width: 100%; max-width: 800px; display: flex; justify-content: space-between; padding: 15px; background: #222; }
+        .btn-group { display: flex; gap: 10px; }
+        .btn { width: 60px; height: 60px; background: #444; border: 2px solid #666; border-radius: 10px; color: white; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; active-background: #666; }
+        .btn:active { background: #666; transform: scale(0.95); }
+        #btnAtk { background: #aa3333; }
+        #btnAtk:active { background: #ff3333; }
+    </style>
 </head>
 <body>
 
-<div id="menu">
-<h1>Magic Cards: Base Defense</h1>
-<button onclick="startGame()">JOGAR</button>
-</div>
-
-<div id="gameover" style="display:none">
-<h1>Game Over</h1>
-<p id="final"></p>
-<button onclick="location.reload()">Reiniciar</button>
-</div>
-
-<div id="game">
-<div id="hud">
-<div>Fase: <span id="stage">1</span></div>
-<div>Ouro: <span id="gold">0</span></div>
-<div>Mana: <span id="mana">10</span></div>
-<div>Base: <span id="hp">100</span></div>
-</div>
-
-<div id="battle">
-<div id="pbase" class="base"></div>
-<div id="ebase" class="base"></div>
-<div id="hero" class="unit">👑</div>
+<div id="gameContainer">
+    <div class="hud">
+        <div class="health-bar-container"><div id="p1Health" class="health-bar"></div></div>
+        <div id="timer">60</div>
+        <div class="health-bar-container"><div id="p2Health" class="health-bar"></div></div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
 </div>
 
 <div id="controls">
-<button onclick="move(-25)">⬅</button>
-<button onclick="move(25)">➡</button>
-<button onclick="attack()">⚔</button>
-<button onclick="summon()">🧙</button>
-</div>
+    <div class="btn-group">
+        <div class="btn" id="btnLeft">◀</div>
+        <div class="btn" id="btnRight">▶</div>
+        <div class="btn" id="btnJump">▲</div>
+    </div>
+    <div class="btn-group">
+        <div class="btn" id="btnAtk">👊</div>
+    </div>
 </div>
 
 <script>
-const S={stage:1,gold:0,mana:10,hp:100,hero:90,enemies:[],allies:[]};
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-function ui(){
-stage.textContent=S.stage;
-gold.textContent=S.gold;
-mana.textContent=S.mana;
-hp.textContent=S.hp;
+canvas.width = 1024;
+canvas.height = 576;
+
+const gravity = 0.6;
+
+class Sprite {
+    constructor({ position, velocity, color, offset }) {
+        this.position = position;
+        this.velocity = velocity;
+        this.width = 50;
+        this.height = 150;
+        this.color = color;
+        this.isAttacking = false;
+        this.health = 100;
+        this.attackBox = {
+            position: { x: this.position.x, y: this.position.y },
+            offset: offset,
+            width: 100,
+            height: 50
+        };
+    }
+
+    draw() {
+        // Personagem
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+        // Caixa de ataque visual se estiver atacando
+        if (this.isAttacking) {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height);
+        }
+    }
+
+    update() {
+        this.draw();
+        this.attackBox.position.x = this.position.x + this.attackBox.offset.x;
+        this.attackBox.position.y = this.position.y;
+
+        this.position.x += this.velocity.x;
+        this.position.y += this.velocity.y;
+
+        // Limite do chão
+        if (this.position.y + this.height + this.velocity.y >= canvas.height - 60) {
+            this.velocity.y = 0;
+            this.position.y = canvas.height - 60 - this.height;
+        } else {
+            this.velocity.y += gravity;
+        }
+
+        // Limites da tela laterais
+        if (this.position.x < 0) this.position.x = 0;
+        if (this.position.x + this.width > canvas.width) this.position.x = canvas.width - this.width;
+    }
+
+    attack() {
+        if (!this.isAttacking) {
+            this.isAttacking = true;
+            setTimeout(() => { this.isAttacking = false; }, 150);
+        }
+    }
 }
 
-function startGame(){
-menu.style.display="none";
-game.style.display="flex";
-spawnLoop=setInterval(spawn,2000);
-gameLoop=requestAnimationFrame(loop);
-manaLoop=setInterval(()=>{if(S.mana<10){S.mana++;ui();}},1000);
-}
-
-function move(v){
-S.hero=Math.max(70,Math.min(window.innerWidth-120,S.hero+v));
-hero.style.left=S.hero+"px";
-}
-
-function attack(){
-S.enemies.forEach(e=>{
-if(e.x-S.hero<80 && e.x>S.hero)e.hp-=15;
-});
-}
-
-function summon(){
-if(S.mana<3)return;
-S.mana-=3;
-ui();
-const el=document.createElement("div");
-el.className="unit ally";
-el.textContent="🧙";
-battle.appendChild(el);
-S.allies.push({el,x:80,hp:50});
-}
-
-function spawn(){
-const el=document.createElement("div");
-el.className="unit enemy";
-el.textContent=S.stage%5===0?"🐉":"👹";
-battle.appendChild(el);
-S.enemies.push({el,x:battle.clientWidth-100,hp:30+S.stage*10});
-}
-
-function loop(){
-S.allies.forEach(a=>{
-a.x+=2;
-a.el.style.left=a.x+"px";
-S.enemies.forEach(e=>{
-if(Math.abs(e.x-a.x)<40)e.hp-=0.5;
-});
-});
-
-S.enemies=S.enemies.filter(e=>{
-e.x-=1+S.stage*0.1;
-e.el.style.left=e.x+"px";
-
-if(e.hp<=0){
-e.el.remove();
-S.gold+=10;
-ui();
-return false;
-}
-
-if(e.x<70){
-S.hp-=10;
-ui();
-e.el.remove();
-if(S.hp<=0)end();
-return false;
-}
-return true;
+const player = new Sprite({
+    position: { x: 150, y: 0 },
+    velocity: { x: 0, y: 0 },
+    color: '#ff3333',
+    offset: { x: 0, y: 30 }
 });
 
-if(S.gold>=S.stage*50){
-S.stage++;
-ui();
+const enemy = new Sprite({
+    position: { x: 800, y: 0 },
+    velocity: { x: 0, y: 0 },
+    color: '#3333ff',
+    offset: { x: -50, y: 30 }
+});
+
+// Controles virtuais (Toque no Tablet)
+const touch = { left: false, right: false };
+
+function setupTouchBtn(id, actionStart, actionEnd) {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); actionStart(); });
+    btn.addEventListener('touchend', (e) => { e.preventDefault(); actionEnd(); });
+    btn.addEventListener('mousedown', actionStart);
+    btn.addEventListener('mouseup', actionEnd);
 }
 
-gameLoop=requestAnimationFrame(loop);
+setupTouchBtn('btnLeft', () => touch.left = true, () => touch.left = false);
+setupTouchBtn('btnRight', () => touch.right = true, () => touch.right = false);
+setupTouchBtn('btnJump', () => { if (player.velocity.y === 0) player.velocity.y = -15; }, () => {});
+setupTouchBtn('btnAtk', () => player.attack(), () => {});
+
+// Inteligência Artificial Simples para o Inimigo (Bot)
+function updateEnemyAI() {
+    const distanceX = player.position.x - enemy.position.x;
+    
+    // Persegue o jogador
+    if (Math.abs(distanceX) > 60) {
+        enemy.velocity.x = distanceX > 0 ? 3 : -3;
+    } else {
+        enemy.velocity.x = 0;
+        // Ataca se estiver perto
+        if (Math.random() < 0.05) enemy.attack();
+    }
+
+    // Pula aleatoriamente se o jogador pular
+    if (player.position.y < enemy.position.y && Math.random() < 0.02 && enemy.velocity.y === 0) {
+        enemy.velocity.y = -15;
+    }
 }
 
-function end(){
-cancelAnimationFrame(gameLoop);
-clearInterval(spawnLoop);
-clearInterval(manaLoop);
-localStorage.setItem("record",Math.max(+localStorage.getItem("record")||0,S.stage));
-game.style.display="none";
-gameover.style.display="flex";
-final.textContent="Você chegou à fase "+S.stage+
-" | Recorde: "+localStorage.getItem("record");
+// Detecção de colisão hitbox
+function rectangularCollision({ rectangle1, rectangle2 }) {
+    return (
+        rectangle1.attackBox.position.x + rectangle1.attackBox.width >= rectangle2.position.x &&
+        rectangle1.attackBox.position.x <= rectangle2.position.x + rectangle2.width &&
+        rectangle1.attackBox.position.y + rectangle1.attackBox.height >= rectangle2.position.y &&
+        rectangle1.attackBox.position.y <= rectangle2.position.y + rectangle2.height
+    );
 }
 
-ui();
+// Timer do jogo
+let time = 60;
+const timerEl = document.getElementById('timer');
+const timerInterval = setInterval(() => {
+    if (time > 0) {
+        time--;
+        timerEl.innerText = time;
+    } else {
+        determineWinner();
+    }
+}, 1000);
+
+function determineWinner() {
+    clearInterval(timerInterval);
+    if (player.health === enemy.health) alert('EMPATE!');
+    else if (player.health > enemy.health) alert('PLAYER 1 VENCEU!');
+    else alert('INIMIGO VENCEU!');
+    window.location.reload();
+}
+
+// Loop de animação principal
+function animate() {
+    window.requestAnimationFrame(animate);
+    
+    // Fundo do cenário (Cenário Noturno Retro)
+    ctx.fillStyle = '#111122';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#222233';
+    ctx.fillRect(0, canvas.height - 60, canvas.width, 60); // Chão
+
+    player.update();
+    enemy.update();
+    updateEnemyAI();
+
+    // Movimentação do Jogador
+    player.velocity.x = 0;
+    if (touch.left) { player.velocity.x = -5; player.attackBox.offset.x = -50; }
+    else if (touch.right) { player.velocity.x = 5; player.attackBox.offset.x = 0; }
+
+    // Verificar dano Player -> Inimigo
+    if (rectangularCollision({ rectangle1: player, rectangle2: enemy }) && player.isAttacking) {
+        enemy.health -= 2;
+        document.getElementById('p2Health').style.width = enemy.health + '%';
+        player.isAttacking = false;
+    }
+
+    // Verificar dano Inimigo -> Player
+    if (rectangularCollision({ rectangle1: enemy, rectangle2: player }) && enemy.isAttacking) {
+        player.health -= 2;
+        document.getElementById('p1Health').style.width = player.health + '%';
+        enemy.isAttacking = false;
+    }
+
+    // Fim de jogo por morte
+    if (player.health <= 0 || enemy.health <= 0) {
+        determineWinner();
+    }
+}
+
+animate();
 </script>
-
 </body>
 </html>
