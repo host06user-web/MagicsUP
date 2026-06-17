@@ -256,26 +256,26 @@
         document.getElementById('p-helper').innerText = saveState.hasHelper ? "CONTRATADO" : "Custo: $350";
         if(saveState.hasHelper) document.getElementById('b-helper').classList.add('maxed');
                 // Atualiza UI da loja com os dados atuais
-        document.getElementById('p-hp').innerText = player.hp;
-        document.getElementById('p-coins').innerText = coins;
-        document.getElementById('p-level').innerText = level;
+           document.getElementById('p-hp').innerText = player.hp;
+           document.getElementById('p-coins').innerText = coins;
+           document.getElementById('p-level').innerText = level;
 
         // Atualizar botões de armas
-        document.getElementById('btn-shotgun').disabled = !weapons.shotgun.unlocked;
-        document.getElementById('btn-uzi').disabled = !weapons.uzi.unlocked;
+           document.getElementById('btn-shotgun').disabled = !weapons.shotgun.unlocked;
+           document.getElementById('btn-uzi').disabled = !weapons.uzi.unlocked;
 
-        document.getElementById('ammo-shotgun').innerText = weapons.shotgun.ammo;
-        document.getElementById('ammo-uzi').innerText = weapons.uzi.ammo;
+           document.getElementById('ammo-shotgun').innerText = weapons.shotgun.ammo;
+           document.getElementById('ammo-uzi').innerText = weapons.uzi.ammo;
 
         // Atualizar preços nos botões de upgrade/compra
-        document.getElementById('btn-up-shotgun').innerText = weapons.shotgun.unlocked ? `Upgrade (R$${weapons.shotgun.cost})` : `Desbloquear (R$${weapons.shotgun.cost})`;
-        document.getElementById('btn-up-uzi').innerText = weapons.uzi.unlocked ? `Upgrade (R$${weapons.uzi.cost})` : `Desbloquear (R$${weapons.uzi.cost})`;
-        document.getElementById('btn-buy-dynamite').innerText = `Comprar 1 (R$${items.dynamite.cost})`;
-        document.getElementById('btn-buy-molotov').innerText = `Comprar 1 (R$${items.molotov.cost})`;
-        document.getElementById('btn-buy-helper').innerText = helpers.active ? "Contratado" : `Contratar (R$${helpers.cost})`;
+           document.getElementById('btn-up-shotgun').innerText = weapons.shotgun.unlocked ? `Upgrade (R$${weapons.shotgun.cost})` : `Desbloquear (R$${weapons.shotgun.cost})`;
+           document.getElementById('btn-up-uzi').innerText = weapons.uzi.unlocked ? `Upgrade (R$${weapons.uzi.cost})` : `Desbloquear (R$${weapons.uzi.cost})`;
+           document.getElementById('btn-buy-dynamite').innerText = `Comprar 1 (R$${items.dynamite.cost})`;
+           document.getElementById('btn-buy-molotov').innerText = `Comprar 1 (R$${items.molotov.cost})`;
+           document.getElementById('btn-buy-helper').innerText = helpers.active ? "Contratado" : `Contratar (R$${helpers.cost})`;
 
-        document.getElementById('count-dynamite').innerText = items.dynamite.count;
-        document.getElementById('count-molotov').innerText = items.molotov.count;
+           document.getElementById('count-dynamite').innerText = items.dynamite.count;
+           document.getElementById('count-molotov').innerText = items.molotov.count;
     }
 
     // LÓGICA DE COMPRAS NA LOJA
