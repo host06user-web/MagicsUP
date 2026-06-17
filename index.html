@@ -2,202 +2,253 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cyber Fight Co-Op Horda</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swamp Attack Clone</title>
     <style>
-        * { box-sizing: border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
-        body { background:#05050a; color:#fff; font-family:monospace; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; }
-        #gameContainer { position:relative; width:100%; max-width:800px; aspect-ratio:16/9; background:#000; border:3px solid #00f0ff; box-shadow:0 0 15px #00f0ff; border-radius:8px; }
-        canvas { width:100%; height:100%; display:block; }
-        .hud { position:absolute; top:12px; left:0; width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 20px; font-weight:bold; font-size:16px; }
-        .bar-bg { width:30%; background:rgba(255,255,255,0.1); height:16px; border:2px solid #fff; border-radius:4px; overflow:hidden; }
-        .bar { height:100%; width:100%; transition:width 0.1s; background:linear-gradient(90deg, #ff0055, #ff5500); }
-        #p2H { background:linear-gradient(270deg, #00ff66, #00ffff); }
-        #waveInfo { background:#111; padding:2px 8px; border:2px solid #ffaa00; border-radius:6px; color:#ffaa00; font-size:16px; text-align:center; }
-        #over { display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); flex-direction:column; align-items:center; justify-content:center; z-index:10; }
-        #winTxt { font-size:32px; font-weight:bold; margin-bottom:8px; }
-        #ctrls { position:absolute; bottom:0; left:0; width:100%; height:110px; display:flex; justify-content:space-between; padding:10px 20px; pointer-events:none; }
-        .pad { display:flex; gap:10px; pointer-events:auto; align-items:center; }
-        .btn { width:48px; height:48px; background:rgba(26,26,51,0.8); border:2px solid #336; border-radius:50%; color:#00f0ff; font-size:18px; display:flex; align-items:center; justify-content:center; }
-        .btn:active { background:#336; color:#fff; }
-        .atk-b { width:52px; height:52px; border-radius:8px; font-size:20px; border-color:#ff0055; color:#ff0055; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #111;
+            color: #fff;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+        canvas {
+            background: linear-gradient(to bottom, #4a5759, #2f3e46, #354f52);
+            display: block;
+            border: 4px solid #222;
+        }
+        .ui-element {
+            position: absolute;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000;
+            font-size: 20px;
+            pointer-events: none;
+        }
+        #score-board { top: 15px; left: 15px; color: #ffd166; }
+        #hp-board { top: 15px; right: 15px; color: #ef476f; }
+        #game-over-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+        #game-over-screen h1 { font-size: 48px; color: #ef476f; margin-bottom: 20px; }
+        #restart-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            background: #06d6a0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+            pointer-events: auto;
+        }
+        #restart-btn:hover { background: #05b88a; }
     </style>
 </head>
 <body>
-<div id="gameContainer">
-    <div class="hud">
-        <div class="bar-bg"><div id="p1H" class="bar"></div></div>
-        <div id="waveInfo">HORDA 1<br><span id="enemyCount">Bots: 2</span></div>
-        <div class="bar-bg"><div id="p2H" class="bar"></div></div>
+
+<div id="game-container">
+    <div id="score-board" class="ui-element">Pontos: <span id="score">0</span></div>
+    <div id="hp-board" class="ui-element">Vida da Cabana: <span id="hp">100</span>%</div>
+    
+    <div id="game-over-screen">
+        <h1>Fim de Jogo!</h1>
+        <button id="restart-btn" onclick="resetGame()">Jogar Novamente</button>
     </div>
-    <div id="over"><div id="winTxt"></div><div id="subTxt" style="color:#888">Iniciando...</div></div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="ctrls">
-        <div class="pad">
-            <div class="btn" id="p1L">◀</div>
-            <div class="btn" id="p1R">▶</div>
-            <div class="btn" id="p1J">▲</div>
-            <div class="btn atk-b" id="p1A">👊</div>
-        </div>
-        <div class="pad">
-            <div class="btn atk-b" id="p2A">👊</div>
-            <div class="btn" id="p2J">▲</div>
-            <div class="btn" id="p2L">◀</div>
-            <div class="btn" id="p2R">▶</div>
-        </div>
-    </div>
+
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
 </div>
+
 <script>
-const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
-canvas.width = 1024; canvas.height = 576; const gravity = 0.6; let gameActive = true;
-let horda = 1; let audioCtx = null; let synthInterval = null;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-// Motor de Áudio Procedural (Sons via Matemática)
-function initAudio() {
-    if (audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Loop de Música Sintetizada Retro Cyberpunk
-    let notes =; let step = 0;
-    synthInterval = setInterval(() => {
+    // Elementos da UI
+    const scoreTxt = document.getElementById('score');
+    const hpTxt = document.getElementById('hp');
+    const gameOverScreen = document.getElementById('game-over-screen');
+
+    // Estado do Jogo
+    let gameActive = true;
+    let score = 0;
+    let spawnTimer = 0;
+
+    // Definição do Defensor (Jogador na Cabana)
+    const player = {
+        x: 80,
+        y: 320,
+        width: 40,
+        height: 60,
+        hp: 100
+    };
+
+    // Listas do Jogo
+    let bullets = [];
+    let enemies = [];
+
+    // Captura o clique do mouse para atirar
+    canvas.addEventListener('click', (e) => {
         if (!gameActive) return;
-        let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(notes[step % notes.length], audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.04, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.2); step++;
-    }, 250);
-}
-function playSound(type) {
-    if (!audioCtx) return;
-    let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    if (type === 'hit') {
-        osc.type = 'triangle'; osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    } else if (type === 'jump') {
-        osc.type = 'sine'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    } else if (type === 'atk') {
-        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.08); gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    }
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-}
 
-class Fighter {
-    constructor({ x, color, ox, id, isBot = false }) {
-        this.pos = { x, y: 0 }; this.vel = { x: 0, y: 0 }; this.w = 60; this.h = 140; this.color = color;
-        this.id = id; this.isBot = isBot; this.isAtk = false; this.hp = 100; this.state = 'idle';
-        this.facing = id === 1 ? 'right' : 'left'; this.stTimer = 0; this.atkBox = { pos: { x: 0, y: 0 }, ox, w: 90, h: 45 };
-    }
-    draw() {
-        ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = this.color;
-        let g = ctx.createLinearGradient(this.pos.x, this.pos.y, this.pos.x, this.pos.y + this.h);
-        g.addColorStop(0, this.color); g.addColorStop(1, '#000'); ctx.fillStyle = g;
-        ctx.beginPath(); ctx.roundRect(this.pos.x, this.pos.y, this.w, this.h, 6); ctx.fill();
-        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.shadowBlur = 0;
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 15px monospace';
-        let fx = this.pos.x + (this.facing === 'right' ? 14 : 10), fy = this.pos.y + 30;
-        let face = "•_•"; if (this.state === 'hit') face = "✕_✕"; else if (this.state === 'atk') face = "🪓_🪓";
-        ctx.fillText(face, fx, fy);
-        if (this.isAtk) { ctx.fillStyle = 'rgba(255,255,0,0.2)'; ctx.fillRect(this.atkBox.pos.x, this.atkBox.pos.y, this.atkBox.w, this.atkBox.h); }
-        ctx.restore();
-    }
-    update() {
-        this.draw(); this.atkBox.pos.x = this.facing === 'right' ? this.pos.x + this.atkBox.ox : this.pos.x - this.atkBox.w + 10;
-        this.atkBox.pos.y = this.pos.y + 25; if (this.stTimer > 0) { this.stTimer--; if (this.stTimer === 0) this.state = 'idle'; }
-        this.pos.x += this.vel.x; this.pos.y += this.vel.y;
-        if (this.pos.y + this.h + this.vel.y >= canvas.height - 85) { this.vel.y = 0; this.pos.y = canvas.height - 85 - this.h; } else { this.vel.y += gravity; }
-        this.pos.x = Math.max(0, Math.min(canvas.width - this.w, this.pos.x));
-    }
-    attack() {
-        if (this.isAtk || this.state === 'hit') return;
-        this.state = 'atk'; this.isAtk = true; this.stTimer = 12; playSound('atk');
-        setTimeout(() => { this.isAtk = false; }, 120);
-    }
-    damage(amt) { this.hp = Math.max(0, this.hp - amt); this.state = 'hit'; this.stTimer = 14; playSound('hit'); }
-}
+        // Calcular ângulo em direção ao clique
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-const p1 = new Fighter({ x: 200, color: '#ff0055', ox: 50, id: 1 });
-const p2 = new Fighter({ x: 320, color: '#00ff66', ox: 50, id: 2 });
-let enemies = []; const input = { p1L: false, p1R: false, p2L: false, p2R: false };
+        const angle = Math.atan2(mouseY - (player.y + 20), mouseX - (player.x + 40));
 
-function spawnHorda() {
-    enemies = []; let count = horda + 1;
-    for (let i = 0; i < count; i++) {
-        enemies.push(new Fighter({ x: 700 + (i * 60), color: '#888888', ox: 50, id: 3 + i, isBot: true }));
-    }
-    document.getElementById('waveInfo').innerHTML = `HORDA ${horda}<br><span id="enemyCount">Bots: ${enemies.length}</span>`;
-}
-
-function bind(id, s, e) {
-    const el = document.getElementById(id);
-    el.addEventListener('touchstart', (x) => { x.preventDefault(); initAudio(); s(); });
-    el.addEventListener('touchend', (x) => { x.preventDefault(); e(); });
-    el.addEventListener('mousedown', () => { initAudio(); s(); }); el.addEventListener('mouseup', e);
-}
-bind('p1L', () => input.p1L = true, () => input.p1L = false); bind('p1R', () => input.p1R = true, () => input.p1R = false);
-bind('p1J', () => { if (p1.vel.y === 0 && gameActive && p1.hp > 0) { p1.vel.y = -14; playSound('jump'); } }, () => {});
-bind('p1A', () => { if (gameActive && p1.hp > 0) p1.attack(); }, () => {});
-bind('p2L', () => input.p2L = true, () => input.p2L = false); bind('p2R', () => input.p2R = true, () => input.p2R = false);
-bind('p2J', () => { if (p2.vel.y === 0 && gameActive && p2.hp > 0) { p2.vel.y = -14; playSound('jump'); } }, () => {});
-bind('p2A', () => { if (gameActive && p2.hp > 0) p2.attack(); }, () => {});
-
-function checkCol(r1, r2) {
-    return (r1.atkBox.pos.x + r1.atkBox.w >= r2.pos.x && r1.atkBox.pos.x <= r2.pos.x + r2.w && r1.atkBox.pos.y + r1.atkBox.h >= r2.pos.y && r1.atkBox.pos.y <= r2.pos.y + r2.h);
-}
-
-function updateBots() {
-    enemies.forEach(bot => {
-        if (bot.state === 'hit') { bot.vel.x = 0; return; }
-        let target = (p1.hp > 0 && (p2.hp <= 0 || Math.abs(p1.pos.x - bot.pos.x) < Math.abs(p2.pos.x - bot.pos.x))) ? p1 : p2;
-        if (target.hp <= 0) { bot.vel.x = 0; return; }
-        let dx = target.pos.x - bot.pos.x; bot.facing = dx > 0 ? 'right' : 'left';
-        if (Math.abs(dx) > 65) { bot.vel.x = dx > 0 ? 2.5 : -2.5; } 
-        else { bot.vel.x = 0; if (Math.random() < 0.04) bot.attack(); }
-    });
-}
-function end(win) {
-    gameActive = false; clearInterval(synthInterval); 
-    const o = document.getElementById('over'), w = document.getElementById('winTxt'), s = document.getElementById('subTxt');
-    if (win) { 
-        w.innerText = "HORDA LIMPA!"; w.style.color = "#ffaa00"; s.innerText = "Preparando próxima fase..."; horda++; 
-        setTimeout(() => { gameActive = true; initAudio(); spawnHorda(); o.style.display = 'none'; }, 2000); 
-    } else { 
-        w.innerText = "FIM DE JOGO!"; w.style.color = "#ff0055"; s.innerText = "Reiniciando progresso..."; horda = 1; 
-        setTimeout(() => window.location.reload(), 3000); 
-    }
-    o.style.display = 'flex';
-}
-
-function loop() {
-    window.requestAnimationFrame(loop); ctx.fillStyle = '#05050b'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'rgba(0,240,255,0.04)'; ctx.lineWidth = 1;
-    for (let i = 0; i < canvas.width; i += 60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
-    ctx.fillStyle = '#0f0f1a'; ctx.fillRect(0, canvas.height - 85, canvas.width, 85);
-    ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(0, canvas.height - 85); ctx.lineTo(canvas.width, canvas.height - 85); ctx.stroke();
-    
-    if (p1.hp > 0) p1.update(); if (p2.hp > 0) p2.update();
-    enemies = enemies.filter(b => b.hp > 0); document.getElementById('enemyCount').innerText = `Bots: ${enemies.length}`;
-    enemies.forEach(bot => bot.update()); updateBots();
-    
-    p1.vel.x = p2.vel.x = 0;
-    if (gameActive) {
-        if (p1.hp > 0 && p1.state !== 'hit') { if (input.p1L) p1.vel.x = -5; else if (input.p1R) p1.vel.x = 5; }
-        if (p2.hp > 0 && p2.state !== 'hit') { if (input.p2L) p2.vel.x = -5; else if (input.p2R) p2.vel.x = 5; }
-        
-        enemies.forEach(bot => {
-            if (p1.hp > 0 && p1.isAtk && checkCol(p1, bot)) { bot.damage(15); p1.isAtk = false; }
-            if (p2.hp > 0 && p2.isAtk && checkCol(p2, bot)) { bot.damage(15); p2.isAtk = false; }
-            if (bot.isAtk) {
-                if (p1.hp > 0 && checkCol(bot, p1)) { p1.damage(8); document.getElementById('p1H').style.width = p1.hp + '%'; bot.isAtk = false; }
-                if (p2.hp > 0 && checkCol(bot, p2)) { p2.damage(8); document.getElementById('p2H').style.width = p2.hp + '%'; bot.isAtk = false; }
-            }
+        // Adicionar projétil
+        bullets.push({
+            x: player.x + 40,
+            y: player.y + 20,
+            radius: 5,
+            speed: 8,
+            dx: Math.cos(angle) * 8,
+            dy: Math.sin(angle) * 8
         });
-        if (enemies.length === 0) end(true);
-        if (p1.hp <= 0 && p2.hp <= 0) end(false);
+    });
+
+    // Função para criar monstros (jacarés/zumbis do pântano)
+    function spawnEnemy() {
+        const size = 30 + Math.random() * 20;
+        enemies.push({
+            x: canvas.width + 50,
+            y: 340 - (size - 40), // Mantém alinhado ao chão fictício
+            width: size * 1.5,
+            height: size,
+            speed: 1 + Math.random() * 1.5,
+            hp: Math.ceil(size / 15)
+        });
     }
-}
-spawnHorda(); loop();
+
+    // Resetar parâmetros
+    function resetGame() {
+        score = 0;
+        player.hp = 100;
+        bullets = [];
+        enemies = [];
+        gameActive = true;
+        scoreTxt.innerText = score;
+        hpTxt.innerText = player.hp;
+        gameOverScreen.style.display = 'none';
+        loop();
+    }
+
+    // Loop Principal de Atualização e Desenho
+    function loop() {
+        if (!gameActive) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. DESENHAR CENÁRIO (Pântano e Cabana)
+        // Água do pântano
+        ctx.fillStyle = '#132a13';
+        ctx.fillRect(0, 350, canvas.width, 100);
+        
+        // Cabana (Defesa)
+        ctx.fillStyle = '#7f5539';
+        ctx.fillRect(0, 200, 100, 150);
+        ctx.fillStyle = '#b5828c';
+        ctx.fillRect(0, 170, 110, 30); // Teto
+
+        // 2. DESENHAR JOGADOR
+        ctx.fillStyle = '#ffb703';
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        // Arma do jogador
+        ctx.fillStyle = '#333';
+        ctx.fillRect(player.x + 30, player.y + 20, 25, 8);
+
+        // 3. ATUALIZAR E DESENHAR BALAS
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.x += b.dx;
+            b.y += b.dy;
+
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Remover se sair da tela
+            if (b.x > canvas.width || b.y > canvas.height || b.x < 0 || b.y < 0) {
+                bullets.splice(i, 1);
+            }
+        }
+
+        // 4. ATUALIZAR E DESENHAR INIMIGOS
+        spawnTimer++;
+        if (spawnTimer > 90) { // Gera inimigo a cada ~1.5 segundos
+            spawnEnemy();
+            spawnTimer = 0;
+        }
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.x -= e.speed;
+
+            // Desenha o monstro (Jacaré simplificado)
+            ctx.fillStyle = '#52b788';
+            ctx.fillRect(e.x, e.y, e.width, e.height);
+            
+            // Olho do monstro
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(e.x + 10, e.y + 5, 5, 5);
+
+            // Colisão com a Cabana (X = 100)
+            if (e.x <= 100) {
+                player.hp -= 10;
+                hpTxt.innerText = Math.max(0, player.hp);
+                enemies.splice(i, 1);
+
+                if (player.hp <= 0) {
+                    gameActive = false;
+                    gameOverScreen.style.display = 'flex';
+                }
+                continue;
+            }
+
+            // Colisão com as Balas
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                let b = bullets[j];
+                if (b.x >= e.x && b.x <= e.x + e.width && b.y >= e.y && b.y <= e.y + e.height) {
+                    e.hp--;
+                    bullets.splice(j, 1);
+
+                    if (e.hp <= 0) {
+                        enemies.splice(i, 1);
+                        score += 10;
+                        scoreTxt.innerText = score;
+                    }
+                    break;
+                }
+            }
+        }
+
+        requestAnimationFrame(loop);
+    }
+
+    // Iniciar o jogo
+    loop();
 </script>
 </body>
 </html>
