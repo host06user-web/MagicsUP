@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SquareCraft Survival</title>
+    <title>SquareCraft Forest Survival</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: monospace; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #1e3f20; font-family: monospace; }
         #gameCanvas { display: block; width: 100vw; height: 100vh; }
         
         /* Interface HUD */
-        #hud { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 2px 2px 0 #000; font-size: 16px; pointer-events: none; }
+        #hud { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 2px 2px 0 #000; font-size: 16px; pointer-events: none; z-index: 10; }
         .bar { width: 200px; height: 20px; background: #444; border: 2px solid #fff; margin-top: 5px; }
         #hpBar { width: 100%; height: 100%; background: #ff3333; transition: width 0.1s; }
         
         /* Hotbar / Inventário */
-        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px; border: 2px solid #555; }
+        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.75); padding: 8px; border-radius: 4px; border: 2px solid #555; z-index: 10; }
         .slot { width: 60px; height: 60px; border: 3px solid #888; background: #222; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 11px; position: relative; cursor: pointer; }
         .slot.selected { border-color: #ffff00; background: #443300; }
         .slot .count { position: absolute; bottom: 2px; right: 4px; font-weight: bold; font-size: 12px; }
         .slot .key { position: absolute; top: 2px; left: 4px; color: #aaa; font-size: 9px; }
 
-        /* Menu de Crafting Lateral */
-        #craftPanel { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.8); padding: 15px; border: 2px solid #fff; color: white; border-radius: 5px; }
+        /* Menu de Fabricação */
+        #craftPanel { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.85); padding: 15px; border: 2px solid #fff; color: white; border-radius: 5px; z-index: 10; }
         .craft-btn { display: block; width: 140px; padding: 8px; margin: 5px 0; background: #444; color: white; border: 1px solid #fff; cursor: pointer; text-align: center; font-size: 12px; }
         .craft-btn:hover { background: #666; }
     </style>
@@ -32,8 +32,8 @@
     <div id="hud">
         <div>Vida do Quadrado:</div>
         <div class="bar"><div id="hpBar"></div></div>
-        <div id="timeDisplay" style="margin-top: 10px;">Tempo: Dia</div>
-        <div id="weaponDisplay" style="margin-top: 5px;">Arma: Mão Livre</div>
+        <div id="timeDisplay" style="margin-top: 10px;">⏱️ Tempo: Dia</div>
+        <div id="weaponDisplay" style="margin-top: 5px;">🪓 Ferramenta / Mão</div>
     </div>
 
     <div id="craftPanel">
@@ -44,11 +44,11 @@
     </div>
 
     <div id="hotbar">
-        <div class="slot selected" id="slot0" onclick="selectSlot(0)"><span class="key">1</span>🪓<br>Mad<span class="count" id="cnt-Mad">0</span></div>
+        <div class="slot selected" id="slot0" onclick="selectSlot(0)"><span class="key">1</span>🪓<br>Mad<span class="count" id="cnt-Mad">5</span></div>
         <div class="slot" id="slot1" onclick="selectSlot(1)"><span class="key">2</span>⚙️<br>Ferro<span class="count" id="cnt-Ferro">0</span></div>
-        <div class="slot" id="slot2" onclick="selectSlot(2)"><span class="key">3</span>🌾<br>Trigo<span class="count" id="cnt-Trigo">0</span></div>
+        <div class="slot" id="slot2" onclick="selectSlot(2)"><span class="key">3</span>🌾<br>Trigo<span class="count" id="cnt-Trigo">2</span></div>
         <div class="slot" id="slot3" onclick="selectSlot(3)"><span class="key">4</span>🍞<br>Pão<span class="count" id="cnt-Pão">0</span></div>
-        <div class="slot" id="slot4" onclick="selectSlot(4)"><span class="key">5</span>📦<br>Mun<span class="count" id="cnt-Mun">0</span></div>
+        <div class="slot" id="slot4" onclick="selectSlot(4)"><span class="key">5</span>📦<br>Mun<span class="count" id="cnt-Mun">30</span></div>
         <div class="slot" id="slot5" onclick="selectSlot(5)"><span class="key">6</span>🔒<br>Arma<span class="count" id="cnt-Arma">---</span></div>
     </div>
 
@@ -65,47 +65,53 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // Estado do Jogo e Inventário
+        // Estado do Jogo
         const inv = { Madeira: 5, Ferro: 0, Trigo: 2, Pão: 0, Munição: 30, ArmaRara: "Nenhuma" };
         let selectedSlot = 0;
         let dayTime = 0; 
         let isNight = false;
 
-        // Configurações do Jogador
+        // Jogador
         const player = {
             x: 3000, y: 3000, size: 32, speed: 4, hp: 100, maxHp: 100,
             scaleX: 1, scaleY: 1, walkCycle: 0, lastShot: 0
         };
 
-        // Teclado e Mouse
+        // Inputs corretos e limpos para evitar travamentos
         const keys = {};
         const mouse = { x: 0, y: 0, isDown: false };
+
         window.addEventListener('keydown', e => { 
             keys[e.key.toLowerCase()] = true; 
             if(['1','2','3','4','5','6'].includes(e.key)) selectSlot(parseInt(e.key)-1);
         });
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
         window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-        window.addEventListener('mousedown', e => { mouse.isDown = true; handleInteraction(); });
+        
+        window.addEventListener('mousedown', e => { 
+            mouse.isDown = true; 
+            handleInteraction(); 
+        });
         window.addEventListener('mouseup', e => mouse.isDown = false);
 
-        // Listas de Entidades do Mundo
+        // Entidades
         const resources = [];
         const enemies = [];
         const bullets = [];
         const drops = [];
 
-        // Inicializar Mundo com Recursos Espalhados
+        // Geração do mapa de floresta (150 Árvores Frondosas, Pedras e Trigo Selvagem)
         for(let i=0; i<150; i++) {
-            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Madeira', hp: 3, size: 40, color: '#8B5A2B' });
-            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Ferro', hp: 4, size: 35, color: '#7A8B8B' });
-            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Trigo', hp: 1, size: 25, color: '#DAA520' });
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Madeira', hp: 3, size: 45, color: '#2e5c1e', trunkColor: '#5c4033' });
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Ferro', hp: 5, size: 30, color: '#70777a', trunkColor: '#4f5456' });
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Trigo', hp: 1, size: 20, color: '#edd170', trunkColor: '#c4aa4f' });
         }
 
         function selectSlot(index) {
             selectedSlot = index;
             for(let i=0; i<6; i++) document.getElementById(`slot${i}`).classList.remove('selected');
             document.getElementById(`slot${index}`).classList.add('selected');
+            updateHUD();
         }
 
         function updateHUD() {
@@ -117,7 +123,7 @@
             document.getElementById('cnt-Arma').innerText = inv.ArmaRara === "Nenhuma" ? "---" : inv.ArmaRara.substring(0,4);
             document.getElementById('hpBar').style.width = `${(player.hp / player.maxHp) * 100}%`;
             document.getElementById('timeDisplay').innerText = isNight ? "⏱️ Tempo: Noite (Perigo!)" : "⏱️ Tempo: Dia";
-            document.getElementById('weaponDisplay').innerText = selectedSlot === 5 && inv.ArmaRara !== "Nenhuma" ? `🔫 Arma: ${inv.ArmaRara}` : "🪓 Ferramenta / Mão";
+            document.getElementById('weaponDisplay').innerText = selectedSlot === 5 && inv.ArmaRara !== "Nenhuma" ? `🔫 Arma: ${inv.ArmaRara}` : "🪓 Ferramenta / Mão Livre";
         }
 
         function craftItem(item) {
@@ -134,87 +140,83 @@
             }
         }
 
-        // Interação de Mineração / Ataque Próximo
+        // Interação com o cenário (Coleta de itens próximos e quebra de blocos)
         function handleInteraction() {
-            if(selectedSlot === 5 && inv.ArmaRara !== "Nenhuma") return; // Lógica de tiro roda separada no loop
-
-            // Pegar itens do chão próximos
+            // Coletar itens do chão que estão perto do jogador automaticamente ao clicar
             for(let i = drops.length - 1; i >= 0; i--) {
                 let d = drops[i];
-                let dist = Math.hypot((player.x) - d.x, (player.y) - d.y);
-                if(dist < 50) {
+                if(Math.hypot(player.x - d.x, player.y - d.y) < 70) {
                     if(inv[d.type] !== undefined) inv[d.type]++;
                     drops.splice(i, 1);
                 }
             }
 
-            // Mineração com clique de perto
+            if(selectedSlot === 5 && inv.ArmaRara !== "Nenhuma") return; // Ignora se for atirar
+
             let worldMouseX = mouse.x - canvas.width/2 + player.x;
             let worldMouseY = mouse.y - canvas.height/2 + player.y;
 
-            resources.forEach((res, index) => {
+            for (let i = resources.length - 1; i >= 0; i--) {
+                let res = resources[i];
                 let distToPlayer = Math.hypot(player.x - res.x, player.y - res.y);
                 let distToClick = Math.hypot(worldMouseX - res.x, worldMouseY - res.y);
                 
-                if(distToPlayer < 120 && distToClick < res.size) {
+                if(distToPlayer < 130 && distToClick < res.size) {
                     res.hp--;
-                    player.scaleX = 1.2; player.scaleY = 0.8; // Feedback visual de batida
+                    player.scaleX = 1.2; player.scaleY = 0.8; // Efeito de impacto no boneco
                     if(res.hp <= 0) {
-                        for(let k=0; k<3; k++) drops.push({x: res.x + (Math.random()*20-10), y: res.y + (Math.random()*20-10), type: res.type});
-                        resources.splice(index, 1);
+                        for(let k=0; k<3; k++) {
+                            drops.push({x: res.x + (Math.random()*30-15), y: res.y + (Math.random()*30-15), type: res.type});
+                        }
+                        resources.splice(i, 1);
                     }
+                    break;
                 }
-            });
+            }
             updateHUD();
         }
 
         function spawnEnemy(type) {
             let angle = Math.random() * Math.PI * 2;
-            let spawnDist = 600;
-            let ex = player.x + Math.cos(angle) * spawnDist;
-            let ey = player.y + Math.sin(angle) * spawnDist;
+            let ex = player.x + Math.cos(angle) * 550;
+            let ey = player.y + Math.sin(angle) * 550;
 
-            if(type === 'Zombie') enemies.push({ x: ex, y: ey, type: 'Zombie', hp: 30, speed: 2, size: 30, color: '#32CD32', isBoss: false });
-            if(type === 'Aranha') enemies.push({ x: ex, y: ey, type: 'Aranha', hp: 20, speed: 3.8, size: 22, color: '#A52A2A', isBoss: false });
-            if(type === 'Boss') enemies.push({ x: ex, y: ey, type: 'BOSS GIGANTE', hp: 250, speed: 1.5, size: 65, color: '#8A2BE2', isBoss: true });
+            if(type === 'Zombie') enemies.push({ x: ex, y: ey, type: 'Zombie', hp: 30, speed: 2, size: 28, color: '#32cd32', isBoss: false });
+            if(type === 'Aranha') enemies.push({ x: ex, y: ey, type: 'Aranha', hp: 20, speed: 3.5, size: 20, color: '#7a221e', isBoss: false });
+            if(type === 'Boss') enemies.push({ x: ex, y: ey, type: 'Boss', hp: 300, speed: 1.5, size: 60, color: '#6a0dad', isBoss: true });
         }
-
         function fireWeapon(type) {
             if(inv.Munição <= 0) return;
             let now = Date.now();
-            
-            let targetX = mouse.x - canvas.width/2;
-            let targetY = mouse.y - canvas.height/2;
-            let angle = Math.atan2(targetY, targetY); 
-                        angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
+            let angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
 
-            if(type === "Pistola" && now - player.lastShot > 400) {
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, damage: 25 });
+            if(type === "Pistola" && now - player.lastShot > 350) {
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle)*13, vy: Math.sin(angle)*13, damage: 25 });
                 inv.Munição--; player.lastShot = now;
-            } else if(type === "Doze" && now - player.lastShot > 800) {
+            } else if(type === "Doze" && now - player.lastShot > 750) {
                 for(let i = -1; i <= 1; i++) {
-                    bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + i*0.2)*10, vy: Math.sin(angle + i*0.2)*10, damage: 15 });
+                    bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + i*0.22)*11, vy: Math.sin(angle + i*0.22)*11, damage: 16 });
                 }
                 inv.Munição = Math.max(0, inv.Munição - 3); player.lastShot = now;
-            } else if(type === "Metralhadora" && now - player.lastShot > 110) {
-                let spread = (Math.random() - 0.5) * 0.15;
-                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + spread)*14, vy: Math.sin(angle + spread)*14, damage: 20 });
+            } else if(type === "Metralhadora" && now - player.lastShot > 100) {
+                let spread = (Math.random() - 0.5) * 0.12;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + spread)*15, vy: Math.sin(angle + spread)*15, damage: 20 });
                 inv.Munição--; player.lastShot = now;
             }
             updateHUD();
         }
 
-        // LOOP PRINCIPAL DO MOTOR DO JOGO
+        // MOTOR PRINCIPAL
         function loop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Controle do Tempo e Spawn de Monstros
+            // Tempo interno e Spawns
             dayTime++;
-            if(dayTime % 1800 === 0) { isNight = !isNight; updateHUD(); }
-            if(isNight && Math.random() < 0.02 && enemies.length < 25) spawnEnemy(Math.random() > 0.3 ? 'Zombie' : 'Aranha');
-            if(dayTime % 3000 === 0) spawnEnemy('Boss');
+            if(dayTime % 1500 === 0) { isNight = !isNight; updateHUD(); }
+            if(isNight && Math.random() < 0.025 && enemies.length < 20) spawnEnemy(Math.random() > 0.4 ? 'Zombie' : 'Aranha');
+            if(dayTime % 3500 === 0) spawnEnemy('Boss');
 
-            // Movimentação do Personagem
+            // Captura de Movimento Atualizada (W, A, S, D + Setas)
             let mx = 0, my = 0;
             if (keys['w'] || keys['arrowup']) my = -1;
             if (keys['s'] || keys['arrowdown']) my = 1;
@@ -222,70 +224,87 @@
             if (keys['d'] || keys['arrowright']) mx = 1;
 
             if(mx !== 0 || my !== 0) {
-                player.x += mx * player.speed;
-                player.y += my * player.speed;
-                player.walkCycle += 0.2;
-                player.scaleX = 1 + Math.sin(player.walkCycle) * 0.1;
-                player.scaleY = 1 - Math.sin(player.walkCycle) * 0.1;
+                let length = Math.hypot(mx, my);
+                player.x += (mx / length) * player.speed;
+                player.y += (my / length) * player.speed;
+                
+                player.walkCycle += 0.25;
+                player.scaleX = 1 + Math.sin(player.walkCycle) * 0.12;
+                player.scaleY = 1 - Math.sin(player.walkCycle) * 0.12;
             } else {
                 player.scaleX += (1 - player.scaleX) * 0.2;
                 player.scaleY += (1 - player.scaleY) * 0.2;
             }
 
-            // Atirar continuamente se segurar o mouse com a arma ativa
+            // Atirar continuamente segurando o clique com a arma selecionada
             if(mouse.isDown && selectedSlot === 5 && inv.ArmaRara !== "Nenhuma") {
                 fireWeapon(inv.ArmaRara);
             }
 
-            // Sistema de Câmera (Centralizado no Quadrado do Player)
             let camX = canvas.width / 2 - player.x;
             let camY = canvas.height / 2 - player.y;
 
-            // Renderizar Grade do Chão
-            ctx.strokeStyle = isNight ? "#112211" : "#335533";
-            ctx.lineWidth = 1;
-            let startGridX = Math.floor((player.x - canvas.width/2)/100)*100;
-            let startGridY = Math.floor((player.y - canvas.height/2)/100)*100;
-            for(let x = startGridX; x < startGridX + canvas.width + 200; x+=100) {
+            // Renderizar Solo de Floresta (Grama Escura e Detalhes)
+            ctx.fillStyle = isNight ? "#142d16" : "#224d25";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Linhas de Demarcação de Solo da Floresta
+            ctx.strokeStyle = isNight ? "#112613" : "#2a592e";
+            ctx.lineWidth = 2;
+            let startX = Math.floor((player.x - canvas.width/2)/120)*120;
+            let startY = Math.floor((player.y - canvas.height/2)/120)*120;
+            for(let x = startX; x < startX + canvas.width + 240; x+=120) {
                 ctx.beginPath(); ctx.moveTo(x + camX, 0); ctx.lineTo(x + camX, canvas.height); ctx.stroke();
             }
-            for(let y = startGridY; y < startGridY + canvas.height + 200; y+=100) {
+            for(let y = startY; y < startY + canvas.height + 240; y+=120) {
                 ctx.beginPath(); ctx.moveTo(0, y + camY); ctx.lineTo(canvas.width, y + camY); ctx.stroke();
             }
 
-            // Desenhar Recursos Naturais
+            // Desenhar Recursos Naturais (Visual de Árvores com Copas e Pedras)
             resources.forEach(res => {
-                ctx.fillStyle = res.color;
-                ctx.fillRect(res.x + camX - res.size/2, res.y + camY - res.size/2, res.size, res.size);
+                if(res.type === 'Madeira') {
+                    ctx.fillStyle = res.trunkColor;
+                    ctx.fillRect(res.x + camX - 8, res.y + camY - 8, 16, 24);
+                    ctx.fillStyle = res.color;
+                    ctx.beginPath(); ctx.arc(res.x + camX, res.y + camY - 12, res.size / 2, 0, Math.PI*2); ctx.fill();
+                } else if(res.type === 'Ferro') {
+                    ctx.fillStyle = res.trunkColor;
+                    ctx.fillRect(res.x + camX - res.size/2, res.y + camY - res.size/2, res.size, res.size);
+                    ctx.fillStyle = res.color;
+                    ctx.fillRect(res.x + camX - res.size/3, res.y + camY - res.size/3, res.size/1.5, res.size/1.5);
+                } else {
+                    ctx.fillStyle = res.color;
+                    ctx.fillRect(res.x + camX - 4, res.y + camY - res.size/2, 8, res.size);
+                    ctx.fillRect(res.x + camX - res.size/2, res.y + camY - 2, res.size, 4);
+                }
             });
 
-            // Desenhar Itens Derrubados no Chão
+            // Desenhar Drops do Chão
             drops.forEach(d => {
                 ctx.fillStyle = "#ffffff";
                 ctx.font = "16px Arial";
-                let sym = d.type === 'Madeira' ? '🪓' : d.type === 'Ferro' ? '⚙️' : '🌾';
-                ctx.fillText(sym, d.x + camX - 8, d.y + camY + 8);
+                let icon = d.type === 'Madeira' ? '🪵' : d.type === 'Ferro' ? '⚙️' : '🌾';
+                ctx.fillText(icon, d.x + camX - 8, d.y + camY + 6);
             });
 
-            // Atualizar e Desenhar Tiros / Balas
+            // Balas e Tiros
             for(let i = bullets.length - 1; i >= 0; i--) {
                 let b = bullets[i];
                 b.x += b.vx; b.y += b.vy;
-                ctx.fillStyle = "#FFFF00";
+                ctx.fillStyle = "#ffdd00";
                 ctx.fillRect(b.x + camX - 3, b.y + camY - 3, 6, 6);
 
-                // Colisão Balas -> Monstros
                 enemies.forEach((en, eIdx) => {
                     if(Math.hypot(b.x - en.x, b.y - en.y) < en.size) {
                         en.hp -= b.damage;
                         bullets.splice(i, 1);
                         if(en.hp <= 0) {
                             if(en.isBoss) {
-                                const gunPool = ["Pistola", "Doze", "Metralhadora"];
-                                inv.ArmaRara = gunPool[Math.floor(Math.random() * gunPool.length)];
+                                const weapons = ["Pistola", "Doze", "Metralhadora"];
+                                inv.ArmaRara = weapons[Math.floor(Math.random() * weapons.length)];
                                 selectSlot(5);
                             } else {
-                                inv.Munição += 3;
+                                inv.Munição += 4;
                             }
                             enemies.splice(eIdx, 1);
                             updateHUD();
@@ -293,11 +312,10 @@
                     }
                 });
 
-                // Limpar balas muito distantes
-                if(b.x < player.x - 1000 || b.x > player.x + 1000) bullets.splice(i, 1);
+                if(b.x < player.x - 1200 || b.x > player.x + 1200) bullets.splice(i, 1);
             }
 
-            // Atualizar e Desenhar Inimigos
+            // Inimigos Ativos
             enemies.forEach(en => {
                 let angle = Math.atan2(player.y - en.y, player.x - en.x);
                 en.x += Math.cos(angle) * en.speed;
@@ -306,39 +324,38 @@
                 ctx.fillStyle = en.color;
                 ctx.fillRect(en.x + camX - en.size/2, en.y + camY - en.size/2, en.size, en.size);
                 
-                // Barra de Vida acima dos Monstros
                 ctx.fillStyle = "red";
-                ctx.fillRect(en.x + camX - en.size/2, en.y + camY - en.size/2 - 10, en.size, 4);
+                ctx.fillRect(en.x + camX - en.size/2, en.y + camY - en.size/2 - 8, en.size, 3);
 
-                // Dano por toque no Jogador
                 if(Math.hypot(player.x - en.x, player.y - en.y) < en.size/2 + player.size/2) {
-                    player.hp -= 0.4;
-                    if(player.hp <= 0) { alert("Você Sobreviveu até onde pôde! Renascendo..."); player.hp = 100; inv.Madeira = 5; }
+                    player.hp -= 0.5;
+                    if(player.hp <= 0) { 
+                        alert("Fim de Jogo! Você foi derrotado pelos monstros da floresta."); 
+                        player.hp = 100; inv.Madeira = 5; inv.ArmaRara = "Nenhuma";
+                    }
                     updateHUD();
                 }
             });
 
-            // Desenhar o Jogador Quadrado Animado
+            // Renderizar Jogador Animado (Squash & Stretch)
             ctx.save();
             ctx.translate(player.x + camX, player.y + camY);
             ctx.scale(player.scaleX, player.scaleY);
-            ctx.fillStyle = "#00BFFF";
+            ctx.fillStyle = "#00bfff";
             ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 2;
             ctx.strokeRect(-player.size/2, -player.size/2, player.size, player.size);
             ctx.restore();
 
-            // Efeito visual de escurecimento noturno
             if(isNight) {
-                ctx.fillStyle = "rgba(0, 15, 45, 0.45)";
+                ctx.fillStyle = "rgba(5, 20, 10, 0.55)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
 
             requestAnimationFrame(loop);
         }
 
-        // Início imediato do jogo
         updateHUD();
         loop();
     </script>
