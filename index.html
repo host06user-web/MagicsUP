@@ -3,477 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Swamp Attack Clone - Avançado</title>
+    <title>SquareCraft Survival</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background: #1a1c1e;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            user-select: none;
-        }
-        #game-container {
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            background: #2b3a42;
-            cursor: crosshair;
-        }
-        .ui-element {
-            position: absolute;
-            font-weight: 900;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
-            font-size: 18px;
-            pointer-events: none;
-            z-index: 5;
-        }
-        #top-bar {
-            top: 15px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            width: calc(100% - 30px);
-        }
-        .hud-item {
-            background: rgba(0,0,0,0.5);
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        #weapon-dock {
-            bottom: 15px;
-            left: 15px;
-            display: flex;
-            gap: 10px;
-        }
-        .weapon-slot {
-            background: rgba(0,0,0,0.6);
-            border: 2px solid #555;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 12px;
-            min-width: 70px;
-        }
-        .weapon-slot.active { border-color: #ffd166; background: rgba(255, 209, 102, 0.2); }
-        #inventory-dock {
-            bottom: 15px;
-            right: 15px;
-            display: flex;
-            gap: 10px;
-        }
-        .item-slot {
-            background: rgba(0,0,0,0.6);
-            border: 2px solid #ef476f;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 12px;
-        }
-        /* Telas Sobrepostas (Loja e Game Over) */
-        .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-        }
-        .shop-container {
-            width: 80%;
-            max-width: 600px;
-            background: #1e293b;
-            border: 3px solid #ffd166;
-            border-radius: 12px;
-            padding: 20px;
-        }
-        .shop-header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 2px solid #334155;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        .shop-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .shop-item {
-            background: #334155;
-            padding: 10px;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        button {
-            padding: 8px 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            background: #06d6a0;
-            color: #fff;
-            transition: 0.1s;
-        }
-        button:hover { filter: brightness(1.1); }
-        button:disabled { background: #475569; cursor: not-allowed; }
-        #start-btn {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            background: #ffd166;
-            color: #1e293b;
-        }
-        #game-over-screen { display: none; }
-        #game-over-screen h1 { font-size: 48px; color: #ef476f; margin-bottom: 20px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #1a1a1a; font-family: monospace; }
+        #gameCanvas { display: block; width: 100vw; height: 100vh; }
+        
+        /* Interface HUD */
+        #hud { position: absolute; top: 10px; left: 10px; color: white; text-shadow: 2px 2px 0 #000; font-size: 16px; pointer-events: none; }
+        .bar { width: 200px; height: 20px; background: #444; border: 2px solid #fff; margin-top: 5px; }
+        #hpBar { width: 100%; height: 100%; background: #ff3333; transition: width 0.1s; }
+        
+        /* Hotbar / Inventário */
+        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.6); padding: 8px; border-radius: 4px; border: 2px solid #555; }
+        .slot { width: 60px; height: 60px; border: 3px solid #888; background: #222; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-size: 11px; position: relative; cursor: pointer; }
+        .slot.selected { border-color: #ffff00; background: #443300; }
+        .slot .count { position: absolute; bottom: 2px; right: 4px; font-weight: bold; font-size: 12px; }
+        .slot .key { position: absolute; top: 2px; left: 4px; color: #aaa; font-size: 9px; }
+
+        /* Menu de Crafting Lateral */
+        #craftPanel { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.8); padding: 15px; border: 2px solid #fff; color: white; border-radius: 5px; }
+        .craft-btn { display: block; width: 140px; padding: 8px; margin: 5px 0; background: #444; color: white; border: 1px solid #fff; cursor: pointer; text-align: center; font-size: 12px; }
+        .craft-btn:hover { background: #666; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <!-- HUD superior -->
-    <div id="top-bar" class="ui-element">
-        <div class="hud-item" style="color: #ef476f;">Vida Cabana: <span id="hud-hp">100</span>%</div>
-        <div class="hud-item" style="color: #ffd166;">Moedas: R$<span id="hud-coins">0</span></div>
-        <div class="hud-item" style="color: #06d6a0;">Fase: <span id="hud-level">1</span> (<span id="hud-progress">0</span> restantes)</div>
+    <div id="hud">
+        <div>Vida do Quadrado:</div>
+        <div class="bar"><div id="hpBar"></div></div>
+        <div id="timeDisplay" style="margin-top: 10px;">Tempo: Dia</div>
+        <div id="weaponDisplay" style="margin-top: 5px;">Arma: Mão Livre</div>
     </div>
 
-    <!-- HUD inferior Armas -->
-    <div id="weapon-dock" class="ui-element">
-        <div id="slot-pistol" class="weapon-slot active">Pistola (1)<br>∞</div>
-        <div id="slot-shotgun" class="weapon-slot">Escopeta (2)<br><span id="ammo-shotgun">0</span></div>
-        <div id="slot-uzi" class="weapon-slot">Uzi (3)<br><span id="ammo-uzi">0</span></div>
+    <div id="craftPanel">
+        <h3>Fabricação</h3>
+        <button class="craft-btn" onclick="craftItem('Pão')">🍞 Fazer Pão<br><small>(3 Trigos)</small></button>
+        <button class="craft-btn" onclick="craftItem('Munição')">📦 Munição x10<br><small>(1 Ferro + 1 Mad)</small></button>
+        <button class="craft-btn" onclick="eatFood()">❤️ Comer Pão<br><small>(Usa 1 Pão)</small></button>
     </div>
 
-    <!-- HUD inferior Itens -->
-    <div id="inventory-dock" class="ui-element">
-        <div class="item-slot">Dinamite (Q)<br>x<span id="count-dynamite">0</span></div>
-        <div class="item-slot">Molotov (E)<br>x<span id="count-molotov">0</span></div>
-    </div>
-    
-    <!-- Tela da Loja entre Fases -->
-    <div id="shop-overlay" class="overlay">
-        <div class="shop-container">
-            <div class="shop-header">
-                <h2>Loja do Pântano</h2>
-                <div>Suas Moedas: <span style="color:#ffd166; font-weight:bold;">R$<span id="p-coins">0</span></span></div>
-            </div>
-            <div style="margin-bottom: 10px; font-size: 14px; color: #94a3b8;">Status atual - Vida: <span id="p-hp">100</span>% | Fase Atual: <span id="p-level">0</span></div>
-            
-            <div class="shop-grid">
-                <div class="shop-item">
-                    <div><strong>Espingarda Doze</strong><br><small>Dano em área (Munição: <span id="shop-ammo-shotgun">0</span>)</small></div>
-                    <button id="btn-up-shotgun" onclick="buyWeaponUpgrade('shotgun')">Desbloquear</button>
-                </div>
-                <div class="shop-item">
-                    <div><strong>Submetralhadora Uzi</strong><br><small>Tiro rápido (Munição: <span id="shop-ammo-uzi">0</span>)</small></div>
-                    <button id="btn-up-uzi" onclick="buyWeaponUpgrade('uzi')">Desbloquear</button>
-                </div>
-                <div class="shop-item">
-                    <div><strong>Dinamite (Q)</strong><br><small>Alto dano explosivo</small></div>
-                    <button id="btn-buy-dynamite" onclick="buyItem('dynamite')">Comprar</button>
-                </div>
-                <div class="shop-item">
-                    <div><strong>Coquetel Molotov (E)</strong><br><small>Cria tapete de fogo</small></div>
-                    <button id="btn-buy-molotov" onclick="buyItem('molotov')">Comprar</button>
-                </div>
-                <div class="shop-item">
-                    <div><strong>Tio do Machado</strong><br><small>Ajudante na Cabana</small></div>
-                    <button id="btn-buy-helper" onclick="buyHelper()">Contratar</button>
-                </div>
-            </div>
-            <button id="start-btn" onclick="startNextLevel()">Iniciar Próxima Fase ➔</button>
-        </div>
+    <div id="hotbar">
+        <div class="slot selected" id="slot0" onclick="selectSlot(0)"><span class="key">1</span>🪓<br>Mad<span class="count" id="cnt-Mad">0</span></div>
+        <div class="slot" id="slot1" onclick="selectSlot(1)"><span class="key">2</span>⚙️<br>Ferro<span class="count" id="cnt-Ferro">0</span></div>
+        <div class="slot" id="slot2" onclick="selectSlot(2)"><span class="key">3</span>🌾<br>Trigo<span class="count" id="cnt-Trigo">0</span></div>
+        <div class="slot" id="slot3" onclick="selectSlot(3)"><span class="key">4</span>🍞<br>Pão<span class="count" id="cnt-Pão">0</span></div>
+        <div class="slot" id="slot4" onclick="selectSlot(4)"><span class="key">5</span>📦<br>Mun<span class="count" id="cnt-Mun">0</span></div>
+        <div class="slot" id="slot5" onclick="selectSlot(5)"><span class="key">6</span>🔒<br>Arma<span class="count" id="cnt-Arma">---</span></div>
     </div>
 
-    <!-- Tela de Game Over -->
-    <div id="game-over-screen" class="overlay">
-        <h1>Cabana Destruída!</h1>
-        <p style="margin-bottom: 20px;">Você defendeu o pântano o máximo que pôde.</p>
-        <button id="restart-btn" style="padding: 15px 30px; font-size: 18px;" onclick="resetGame()">Jogar Novamente</button>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
-</div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Estado Geral do Jogo
-    let gameActive = false;
-    let coins = 50; // Começa com um dinheirinho extra de bônus
-    let level = 0;
-    let currentWeapon = 'pistol';
-
-    // Controle de hordas
-    let enemiesSpawned = 0;
-    let enemiesLeftToKill = 0;
-    let spawnTimer = 0;
-    let spawnInterval = 90;
-
-    // Configuração do Jogador (Status)
-    const player = { x: 80, y: 320, width: 40, height: 60, hp: 100 };
-
-    // Estruturas de Armamento
-    const weapons = {
-        pistol: { unlocked: true, damage: 15, ammo: Infinity, maxAmmo: Infinity, fireRate: 400 },
-        shotgun: { unlocked: false, damage: 25, ammo: 0, maxAmmo: 20, cost: 150, level: 1 },
-        uzi: { unlocked: false, damage: 12, ammo: 0, maxAmmo: 100, cost: 300, level: 1 }
-    };
-
-    // Consumíveis de Defesa
-    const items = {
-        dynamite: { count: 1, cost: 50 },
-        molotov: { count: 1, cost: 40 }
-    };
-
-    // Ajudantes
-    const helpers = { active: false, cost: 500, lastShot: 0, cooldown: 60 };
-
-    // Listas de Entidades de Renderização
-    let bullets = [];
-    let enemies = [];
-    let explosives = [];
-    let particles = [];
-
-    // Controle de Disparo Contínuo (Uzi)
-    let isShootingUzi = false;
-    let uziTarget = { x: 0, y: 0 };
-    let lastUziShotTime = 0;
-
-    // ATUALIZAÇÃO DA INTERFACE (HUD / LOJA)
-    function updateShopUI() {
-        // Top HUD do Jogo
-        document.getElementById('hud-hp').innerText = Math.max(0, player.hp);
-        document.getElementById('hud-coins').innerText = coins;
-        document.getElementById('hud-level').innerText = level;
-        document.getElementById('hud-progress').innerText = enemiesLeftToKill;
-
-        // Munições nos Slots inferiores
-        document.getElementById('ammo-shotgun').innerText = weapons.shotgun.unlocked ? weapons.shotgun.ammo : "Bloq.";
-                document.getElementById('ammo-uzi').innerText = weapons.uzi.unlocked ? weapons.uzi.ammo : "Bloq.";
-
-        // Desabilitar botões se o jogador não tiver moedas suficientes
-        document.getElementById('btn-up-shotgun').disabled = (coins < weapons.shotgun.cost);
-        document.getElementById('btn-up-uzi').disabled = (coins < weapons.uzi.cost);
-        document.getElementById('btn-buy-dynamite').disabled = (coins < items.dynamite.cost);
-        document.getElementById('btn-buy-molotov').disabled = (coins < items.molotov.cost);
-        document.getElementById('btn-buy-helper').disabled = (helpers.active || coins < helpers.cost);
-
-        // Atualizar textos dos botões de Upgrade com os preços dinâmicos
-        document.getElementById('btn-up-shotgun').innerText = weapons.shotgun.unlocked ? `Upgrade (R$${weapons.shotgun.cost})` : `Desbloquear (R$${weapons.shotgun.cost})`;
-        document.getElementById('btn-up-uzi').innerText = weapons.uzi.unlocked ? `Upgrade (R$${weapons.uzi.cost})` : `Desbloquear (R$${weapons.uzi.cost})`;
-        document.getElementById('btn-buy-dynamite').innerText = `Comprar +1 (R$${items.dynamite.cost})`;
-        document.getElementById('btn-buy-molotov').innerText = `Comprar +1 (R$${items.molotov.cost})`;
-        document.getElementById('btn-buy-helper').innerText = helpers.active ? "Já Contratado" : `Contratar (R$${helpers.cost})`;
-
-        // Contadores de itens consumíveis no topo da tela
-        document.getElementById('count-dynamite').innerText = items.dynamite.count;
-        document.getElementById('count-molotov').innerText = items.molotov.count;
-    }
-
-    // 2. SISTEMA DE COMPRAS E UPGRADES DA LOJA
-    function buyWeaponUpgrade(type) {
-        let w = weapons[type];
-        if (coins >= w.cost) {
-            coins -= w.cost;
-            if (!w.unlocked) {
-                w.unlocked = true;
-                w.ammo = w.maxAmmo;
-            } else {
-                w.level++;
-                w.damage += 8; // Aumenta o dano por nível
-                w.maxAmmo += 15; // Aumenta o pente máximo de reserva
-                w.ammo = w.maxAmmo; // Recarrega totalmente
-            }
-            w.cost = Math.floor(w.cost * 1.6); // Multiplicador de preço inflacionário
-            updateShopUI();
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
-    }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-    function buyItem(type) {
-        let it = items[type];
-        if (coins >= it.cost) {
-            coins -= it.cost;
-            it.count++;
-            updateShopUI();
-        }
-    }
+        // Estado do Jogo e Inventário
+        const inv = { Madeira: 5, Ferro: 0, Trigo: 2, Pão: 0, Munição: 30, ArmaRara: "Nenhuma" };
+        let selectedSlot = 0;
+        let dayTime = 0; 
+        let isNight = false;
 
-    function buyHelper() {
-        if (!helpers.active && coins >= helpers.cost) {
-            coins -= helpers.cost;
-            helpers.active = true;
-            updateShopUI();
-        }
-    }
+        // Configurações do Jogador
+        const player = {
+            x: 3000, y: 3000, size: 32, speed: 4, hp: 100, maxHp: 100,
+            scaleX: 1, scaleY: 1, walkCycle: 0, lastShot: 0
+        };
 
-    // 3. CAPTURA DE TECLADO (Troca de armas e explosivos)
-    window.addEventListener('keydown', (e) => {
-        if (!gameActive) return;
-        
-        // Troca manual usando chaves numéricas do teclado
-        if (e.key === '1') currentWeapon = 'pistol';
-        if (e.key === '2' && weapons.shotgun.unlocked) currentWeapon = 'shotgun';
-        if (e.key === '3' && weapons.uzi.unlocked) currentWeapon = 'uzi';
-
-        // Lançar explosivos táticos de defesa
-        if (e.key.toLowerCase() === 'q' && items.dynamite.count > 0) {
-            items.dynamite.count--;
-            spawnExplosive('dynamite');
-            updateShopUI();
-        }
-        if (e.key.toLowerCase() === 'e' && items.molotov.count > 0) {
-            items.molotov.count--;
-            spawnExplosive('molotov');
-            updateShopUI();
-        }
-    });
-
-    function spawnExplosive(type) {
-        explosives.push({
-            x: player.x + 40,
-            y: player.y,
-            targetX: 250 + Math.random() * 350, // Ponto de queda aleatório na rota inimiga
-            targetY: 360,
-            gravity: 0.25,
-            vy: -8, // Impulso vertical em arco de parábola
-            type: type,
-            radius: 8
+        // Teclado e Mouse
+        const keys = {};
+        const mouse = { x: 0, y: 0, isDown: false };
+        window.addEventListener('keydown', e => { 
+            keys[e.key.toLowerCase()] = true; 
+            if(['1','2','3','4','5','6'].includes(e.key)) selectSlot(parseInt(e.key)-1);
         });
-    }
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mousedown', e => { mouse.isDown = true; handleInteraction(); });
+        window.addEventListener('mouseup', e => mouse.isDown = false);
 
-    // 4. LOGICA DE ARMA E SISTEMA DE MOUSE (Disparos Contínuos e Únicos)
-    canvas.addEventListener('mousedown', (e) => {
-        if (!gameActive) return;
+        // Listas de Entidades do Mundo
+        const resources = [];
+        const enemies = [];
+        const bullets = [];
+        const drops = [];
 
-        const rect = canvas.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        if (currentWeapon === 'uzi') {
-            isShootingUzi = true;
-            uziTarget = { x: mouseX, y: mouseY };
-        } else {
-            fireWeapon(mouseX, mouseY);
+        // Inicializar Mundo com Recursos Espalhados
+        for(let i=0; i<150; i++) {
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Madeira', hp: 3, size: 40, color: '#8B5A2B' });
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Ferro', hp: 4, size: 35, color: '#7A8B8B' });
+            resources.push({ x: Math.random()*6000, y: Math.random()*6000, type: 'Trigo', hp: 1, size: 25, color: '#DAA520' });
         }
-    });
 
-    canvas.addEventListener('mousemove', (e) => {
-        if (!isShootingUzi) return;
-        const rect = canvas.getBoundingClientRect();
-        uziTarget.x = e.clientX - rect.left;
-        uziTarget.y = e.clientY - rect.top;
-    });
-
-    window.addEventListener('mouseup', () => {
-        isShootingUzi = false;
-    });
-
-    function fireWeapon(targetX, targetY) {
-        let w = weapons[currentWeapon];
-
-        // Se a munição acabar, impede o disparo
-        if (w.ammo <= 0) return; 
-
-        if (currentWeapon !== 'pistol') {
-            w.ammo--;
+        function selectSlot(index) {
+            selectedSlot = index;
+            for(let i=0; i<6; i++) document.getElementById(`slot${i}`).classList.remove('selected');
+            document.getElementById(`slot${index}`).classList.add('selected');
         }
-        updateShopUI();
 
-        // Cálculo vetorial do projétil baseado na posição do clique
-        let angle = Math.atan2(targetY - (player.y + 20), targetX - (player.x + 35));
+        function updateHUD() {
+            document.getElementById('cnt-Mad').innerText = inv.Madeira;
+            document.getElementById('cnt-Ferro').innerText = inv.Ferro;
+            document.getElementById('cnt-Trigo').innerText = inv.Trigo;
+            document.getElementById('cnt-Pão').innerText = inv.Pão;
+            document.getElementById('cnt-Mun').innerText = inv.Munição;
+            document.getElementById('cnt-Arma').innerText = inv.ArmaRara === "Nenhuma" ? "---" : inv.ArmaRara.substring(0,4);
+            document.getElementById('hpBar').style.width = `${(player.hp / player.maxHp) * 100}%`;
+            document.getElementById('timeDisplay').innerText = isNight ? "⏱️ Tempo: Noite (Perigo!)" : "⏱️ Tempo: Dia";
+            document.getElementById('weaponDisplay').innerText = selectedSlot === 5 && inv.ArmaRara !== "Nenhuma" ? `🔫 Arma: ${inv.ArmaRara}` : "🪓 Ferramenta / Mão";
+        }
 
-        if (currentWeapon === 'shotgun') {
-            // Disparo triplo espalhado (Padrão de Escopeta)
-            for (let i = -1; i <= 1; i++) {
-                let spreadAngle = angle + (i * 0.12);
-                bullets.push({
-                    x: player.x + 35, y: player.y + 20,
-                    dx: Math.cos(spreadAngle) * 11, dy: Math.sin(spreadAngle) * 11,
-                    damage: w.damage, radius: 4, color: '#f39c12'
-                });
+        function craftItem(item) {
+            if(item === 'Pão' && inv.Trigo >= 3) { inv.Trigo -= 3; inv.Pão += 1; }
+            if(item === 'Munição' && inv.Ferro >= 1 && inv.Madeira >= 1) { inv.Ferro -= 1; inv.Madeira -= 1; inv.Munição += 10; }
+            updateHUD();
+        }
+
+        function eatFood() {
+            if(inv.Pão > 0 && player.hp < player.maxHp) {
+                inv.Pão--;
+                player.hp = Math.min(player.maxHp, player.hp + 35);
+                updateHUD();
             }
-        } else {
-            // Tiro de precisão individual (Pistola e Submetralhadora)
-            bullets.push({
-                x: player.x + 35, y: player.y + 20,
-                dx: Math.cos(angle) * (currentWeapon === 'uzi' ? 15 : 9),
-                dy: Math.sin(angle) * (currentWeapon === 'uzi' ? 15 : 9),
-                damage: w.damage, radius: currentWeapon === 'uzi' ? 3 : 5,
-                color: currentWeapon === 'uzi' ? '#f1c40f' : '#e67e22'
-            });
         }
-    }
 
-    // 5. TRANSIÇÕES DE ESTADO (Iniciar fases e Reinicializar o jogo)
-    function startNextLevel() {
-        document.getElementById('shop-overlay').style.display = 'none';
-        
-        // Multiplicadores automáticos de dificuldade por nível
-        level++;
-        enemiesSpawned = 0;
-        enemiesLeftToKill = 8 + (level * 4); 
-        spawnInterval = Math.max(35, 110 - (level * 7));
+        // Interação de Mineração / Ataque Próximo
+        function handleInteraction() {
+            if(selectedSlot === 5 && inv.ArmaRara !== "Nenhuma") return; // Lógica de tiro roda separada no loop
 
-        // Reabastecimento parcial tático ao sobreviver ao estágio
-        if(weapons.shotgun.unlocked) weapons.shotgun.ammo = Math.min(weapons.shotgun.maxAmmo, weapons.shotgun.ammo + 8);
-        if(weapons.uzi.unlocked) weapons.uzi.ammo = Math.min(weapons.uzi.maxAmmo, weapons.uzi.ammo + 45);
+            // Pegar itens do chão próximos
+            for(let i = drops.length - 1; i >= 0; i--) {
+                let d = drops[i];
+                let dist = Math.hypot((player.x) - d.x, (player.y) - d.y);
+                if(dist < 50) {
+                    if(inv[d.type] !== undefined) inv[d.type]++;
+                    drops.splice(i, 1);
+                }
+            }
 
-        // Limpeza de arrays dinâmicos antigos
-        bullets = [];
-        enemies = [];
-        explosives = [];
-        particles = [];
-        
-        gameActive = true;
-        updateShopUI();
+            // Mineração com clique de perto
+            let worldMouseX = mouse.x - canvas.width/2 + player.x;
+            let worldMouseY = mouse.y - canvas.height/2 + player.y;
+
+            resources.forEach((res, index) => {
+                let distToPlayer = Math.hypot(player.x - res.x, player.y - res.y);
+                let distToClick = Math.hypot(worldMouseX - res.x, worldMouseY - res.y);
+                
+                if(distToPlayer < 120 && distToClick < res.size) {
+                    res.hp--;
+                    player.scaleX = 1.2; player.scaleY = 0.8; // Feedback visual de batida
+                    if(res.hp <= 0) {
+                        for(let k=0; k<3; k++) drops.push({x: res.x + (Math.random()*20-10), y: res.y + (Math.random()*20-10), type: res.type});
+                        resources.splice(index, 1);
+                    }
+                }
+            });
+            updateHUD();
+        }
+
+        function spawnEnemy(type) {
+            let angle = Math.random() * Math.PI * 2;
+            let spawnDist = 600;
+            let ex = player.x + Math.cos(angle) * spawnDist;
+            let ey = player.y + Math.sin(angle) * spawnDist;
+
+            if(type === 'Zombie') enemies.push({ x: ex, y: ey, type: 'Zombie', hp: 30, speed: 2, size: 30, color: '#32CD32', isBoss: false });
+            if(type === 'Aranha') enemies.push({ x: ex, y: ey, type: 'Aranha', hp: 20, speed: 3.8, size: 22, color: '#A52A2A', isBoss: false });
+            if(type === 'Boss') enemies.push({ x: ex, y: ey, type: 'BOSS GIGANTE', hp: 250, speed: 1.5, size: 65, color: '#8A2BE2', isBoss: true });
+        }
+
+        function fireWeapon(type) {
+            if(inv.Munição <= 0) return;
+            let now = Date.now();
+            
+            let targetX = mouse.x - canvas.width/2;
+            let targetY = mouse.y - canvas.height/2;
+            let angle = Math.atan2(targetY, targetY); 
+                        angle = Math.atan2(mouse.y - canvas.height/2, mouse.x - canvas.width/2);
+
+            if(type === "Pistola" && now - player.lastShot > 400) {
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle)*12, vy: Math.sin(angle)*12, damage: 25 });
+                inv.Munição--; player.lastShot = now;
+            } else if(type === "Doze" && now - player.lastShot > 800) {
+                for(let i = -1; i <= 1; i++) {
+                    bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + i*0.2)*10, vy: Math.sin(angle + i*0.2)*10, damage: 15 });
+                }
+                inv.Munição = Math.max(0, inv.Munição - 3); player.lastShot = now;
+            } else if(type === "Metralhadora" && now - player.lastShot > 110) {
+                let spread = (Math.random() - 0.5) * 0.15;
+                bullets.push({ x: player.x, y: player.y, vx: Math.cos(angle + spread)*14, vy: Math.sin(angle + spread)*14, damage: 20 });
+                inv.Munição--; player.lastShot = now;
+            }
+            updateHUD();
+        }
+
+        // LOOP PRINCIPAL DO MOTOR DO JOGO
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Controle do Tempo e Spawn de Monstros
+            dayTime++;
+            if(dayTime % 1800 === 0) { isNight = !isNight; updateHUD(); }
+            if(isNight && Math.random() < 0.02 && enemies.length < 25) spawnEnemy(Math.random() > 0.3 ? 'Zombie' : 'Aranha');
+            if(dayTime % 3000 === 0) spawnEnemy('Boss');
+
+            // Movimentação do Personagem
+            let mx = 0, my = 0;
+            if (keys['w'] || keys['arrowup']) my = -1;
+            if (keys['s'] || keys['arrowdown']) my = 1;
+            if (keys['a'] || keys['arrowleft']) mx = -1;
+            if (keys['d'] || keys['arrowright']) mx = 1;
+
+            if(mx !== 0 || my !== 0) {
+                player.x += mx * player.speed;
+                player.y += my * player.speed;
+                player.walkCycle += 0.2;
+                player.scaleX = 1 + Math.sin(player.walkCycle) * 0.1;
+                player.scaleY = 1 - Math.sin(player.walkCycle) * 0.1;
+            } else {
+                player.scaleX += (1 - player.scaleX) * 0.2;
+                player.scaleY += (1 - player.scaleY) * 0.2;
+            }
+
+            // Atirar continuamente se segurar o mouse com a arma ativa
+            if(mouse.isDown && selectedSlot === 5 && inv.ArmaRara !== "Nenhuma") {
+                fireWeapon(inv.ArmaRara);
+            }
+
+            // Sistema de Câmera (Centralizado no Quadrado do Player)
+            let camX = canvas.width / 2 - player.x;
+            let camY = canvas.height / 2 - player.y;
+
+            // Renderizar Grade do Chão
+            ctx.strokeStyle = isNight ? "#112211" : "#335533";
+            ctx.lineWidth = 1;
+            let startGridX = Math.floor((player.x - canvas.width/2)/100)*100;
+            let startGridY = Math.floor((player.y - canvas.height/2)/100)*100;
+            for(let x = startGridX; x < startGridX + canvas.width + 200; x+=100) {
+                ctx.beginPath(); ctx.moveTo(x + camX, 0); ctx.lineTo(x + camX, canvas.height); ctx.stroke();
+            }
+            for(let y = startGridY; y < startGridY + canvas.height + 200; y+=100) {
+                ctx.beginPath(); ctx.moveTo(0, y + camY); ctx.lineTo(canvas.width, y + camY); ctx.stroke();
+            }
+
+            // Desenhar Recursos Naturais
+            resources.forEach(res => {
+                ctx.fillStyle = res.color;
+                ctx.fillRect(res.x + camX - res.size/2, res.y + camY - res.size/2, res.size, res.size);
+            });
+
+            // Desenhar Itens Derrubados no Chão
+            drops.forEach(d => {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "16px Arial";
+                let sym = d.type === 'Madeira' ? '🪓' : d.type === 'Ferro' ? '⚙️' : '🌾';
+                ctx.fillText(sym, d.x + camX - 8, d.y + camY + 8);
+            });
+
+            // Atualizar e Desenhar Tiros / Balas
+            for(let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx; b.y += b.vy;
+                ctx.fillStyle = "#FFFF00";
+                ctx.fillRect(b.x + camX - 3, b.y + camY - 3, 6, 6);
+
+                // Colisão Balas -> Monstros
+                enemies.forEach((en, eIdx) => {
+                    if(Math.hypot(b.x - en.x, b.y - en.y) < en.size) {
+                        en.hp -= b.damage;
+                        bullets.splice(i, 1);
+                        if(en.hp <= 0) {
+                            if(en.isBoss) {
+                                const gunPool = ["Pistola", "Doze", "Metralhadora"];
+                                inv.ArmaRara = gunPool[Math.floor(Math.random() * gunPool.length)];
+                                selectSlot(5);
+                            } else {
+                                inv.Munição += 3;
+                            }
+                            enemies.splice(eIdx, 1);
+                            updateHUD();
+                        }
+                    }
+                });
+
+                // Limpar balas muito distantes
+                if(b.x < player.x - 1000 || b.x > player.x + 1000) bullets.splice(i, 1);
+            }
+
+            // Atualizar e Desenhar Inimigos
+            enemies.forEach(en => {
+                let angle = Math.atan2(player.y - en.y, player.x - en.x);
+                en.x += Math.cos(angle) * en.speed;
+                en.y += Math.sin(angle) * en.speed;
+
+                ctx.fillStyle = en.color;
+                ctx.fillRect(en.x + camX - en.size/2, en.y + camY - en.size/2, en.size, en.size);
+                
+                // Barra de Vida acima dos Monstros
+                ctx.fillStyle = "red";
+                ctx.fillRect(en.x + camX - en.size/2, en.y + camY - en.size/2 - 10, en.size, 4);
+
+                // Dano por toque no Jogador
+                if(Math.hypot(player.x - en.x, player.y - en.y) < en.size/2 + player.size/2) {
+                    player.hp -= 0.4;
+                    if(player.hp <= 0) { alert("Você Sobreviveu até onde pôde! Renascendo..."); player.hp = 100; inv.Madeira = 5; }
+                    updateHUD();
+                }
+            });
+
+            // Desenhar o Jogador Quadrado Animado
+            ctx.save();
+            ctx.translate(player.x + camX, player.y + camY);
+            ctx.scale(player.scaleX, player.scaleY);
+            ctx.fillStyle = "#00BFFF";
+            ctx.fillRect(-player.size/2, -player.size/2, player.size, player.size);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-player.size/2, -player.size/2, player.size, player.size);
+            ctx.restore();
+
+            // Efeito visual de escurecimento noturno
+            if(isNight) {
+                ctx.fillStyle = "rgba(0, 15, 45, 0.45)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        // Início imediato do jogo
+        updateHUD();
         loop();
-    }
-
-    function resetGame() {
-        // Zera completamente o progresso econômico e militar do jogador
-        coins = 0;
-        level = 0;
-        player.hp = 100;
-        
-        weapons.pistol.ammo = Infinity;
-        weapons.shotgun.unlocked = false; weapons.shotgun.ammo = 0; weapons.shotgun.cost = 150; weapons.shotgun.level = 1; weapons.shotgun.damage = 25;
-        weapons.uzi.unlocked = false; weapons.uzi.ammo = 0; weapons.uzi.cost = 300; weapons.uzi.level = 1; weapons.uzi.damage = 12;
-        
-        items.dynamite.count = 1;
-        items.molotov.count = 1;
-        helpers.active = false;
-
-        document.getElementById('game-over-screen').style.display = 'none';
-        startNextLevel();
-    }
-
-    // Inicialização da interface inicial
-    updateShopUI();
-    // Exibe o painel de compras para que o jogador execute as ações na Fase 1
-    document.getElementById('shop-overlay').style.display = 'flex';
-</script>
+    </script>
 </body>
 </html>
